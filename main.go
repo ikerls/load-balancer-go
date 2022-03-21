@@ -18,7 +18,7 @@ import (
 const (
 	MAX_RETRIES = 3
 	RETRIES_KEY
-	Attempts int = iota
+	ATTEMPTS int = iota
 )
 
 type Backend struct {
@@ -53,8 +53,8 @@ func (servers *ServerPool) NextIndex() int {
 // returns the next available backend
 func (servers *ServerPool) GetNextBackend() *Backend {
 	next := servers.NextIndex()
-	serversLenth := len(servers.backends) + next
-	for i := next; i < serversLenth; i++ {
+	serversLength := len(servers.backends) + next
+	for i := next; i < serversLength; i++ {
 		index := i % len(servers.backends)
 
 		if servers.backends[index].IsAlive() {
@@ -103,7 +103,7 @@ func GetRetryFromContext(request *http.Request) int {
 }
 
 func GetAttemptsFromContext(r *http.Request) int {
-	if attempts, ok := r.Context().Value(Attempts).(int); ok {
+	if attempts, ok := r.Context().Value(ATTEMPTS).(int); ok {
 		return attempts
 	}
 	return 0
@@ -180,9 +180,9 @@ func main() {
 			}
 			// if we have retried 3 times, mark the server as down
 			servers.MarkBackendStatus(serverUrl, false)
-			attemps := GetAttemptsFromContext(request)
-			log.Printf("%s %s retry: %d \n", request.Method, request.URL.String(), attemps)
-			ctx := context.WithValue(request.Context(), Attempts, attemps + 1)
+			attempsFromContext := GetAttemptsFromContext(request)
+			log.Printf("%s %s retry: %d \n", request.Method, request.URL.String(), attempsFromContext)
+			ctx := context.WithValue(request.Context(), ATTEMPTS, attempsFromContext + 1)
 			loadBalancer(writer, request.WithContext(ctx))
 		}
 		servers.AddBackend(&Backend{
